@@ -10,7 +10,7 @@ enemy_img = load_image("enemy.png", (50, 50))
 enemy2_img = load_image("enemy2.png", (50, 50))
 teleport_enemy_img = load_image("teleport.png", (50, 50))
 bullet_img = pygame.Surface((5, 10))
-bullet_img.fill(constants.WHITE)
+bullet_img.fill(pygame.Color("#fcbc41")) #constants.WHITE)
 
 
 teleport_animation = [load_image(f"teleport/t{i}.png", (50, 50)) for i in range(14)]
@@ -343,7 +343,7 @@ class Bullet:
                 # Fallback - círculo amarelo-alaranjado que diminui
                 surf = pygame.Surface((30, 30), pygame.SRCALPHA)
                 alpha = 255 - (i * 50)
-                color = (255, 255, 255, alpha)
+                color = pygame.Color("#fcbc41") #(255, 255, 255, alpha)
                 radius = 15 - (i * 3)
                 pygame.draw.circle(surf, color, (15, 15), radius)
                 self.flash_frames.append(surf)
