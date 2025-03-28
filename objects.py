@@ -8,7 +8,6 @@ from utils import load_image
 player_img = load_image("player.png", (50, 50))
 enemy_img = load_image("enemy.png", (50, 50))
 enemy2_img = load_image("enemy2.png", (50, 50))
-agile_enemy_img = load_image("agile_enemy.png", (50, 50))
 teleport_enemy_img = load_image("teleport.png", (50, 50))
 bullet_img = pygame.Surface((5, 10))
 bullet_img.fill(constants.WHITE)
@@ -86,17 +85,33 @@ class Bomb:
         return self.x - 180 <= enemy.rect.centerx <= self.x + 180 and self.y - 180 <= enemy.rect.centery <= self.y + 180
 
 class Player:
-    def __init__(self):
-        self.rect = player_img.get_rect(midbottom=(constants.WIDTH // 2, constants.HEIGHT - 20))
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
         self.speed = 5
         self.bombs = 5
         self.score_for_bomb = 0
+        self.sprites = [  # Lista de sprites para animação
+           load_image("player.png", (50, 50)),
+           load_image("player2.png", (50, 50))
+        ]
+        self.current_sprite = 0  # Índice do sprite atual
+        self.image = self.sprites[self.current_sprite]
+        self.rect = self.image.get_rect(center=(x, y))
+        self.animation_speed = 0.1  # Troca de sprite a cada 0.2 segundos
+        self.last_update = pygame.time.get_ticks()
+
+    def animate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.animation_speed * 1000:  # Converte segundos para ms
+            self.last_update = now
+            self.current_sprite = (self.current_sprite + 1) % len(self.sprites)  # Alterna entre 0 e 1
+            self.image = self.sprites[self.current_sprite]
 
     def move(self, dx):
         self.rect.x = max(0, min(constants.WIDTH - self.rect.width, self.rect.x + dx * self.speed))
 
     def draw(self, screen, font):
-        screen.blit(player_img, self.rect)
         bomb_text = font.render(f"Bombas: {self.bombs}", True, constants.WHITE)
         screen.blit(bomb_text, (constants.WIDTH - 120, 10))
 
@@ -107,12 +122,14 @@ class Player:
             self.score_for_bomb -= 100
 
 class BaseEnemy:
-    def __init__(self, x, y, speed, img):
-        self.rect = img.get_rect(topleft=(x, y))
+    def __init__(self, x, y, speed):
         self.y = float(y)
         self.speed = float(speed)
-        self.image = img
+        self.animation_speed = 0.1  # Troca de sprite a cada 0.2 segundos
+        self.current_sprite = 0  # Índice do sprite atual
+        self.sprites = []
         self.last_shot_time = pygame.time.get_ticks()
+        self.last_update = pygame.time.get_ticks()
 
     def move(self):
         self.y += self.speed
@@ -126,9 +143,22 @@ class BaseEnemy:
             enemy_bullets.append(Bullet(self.rect.centerx, self.rect.bottom, 5))
             self.last_shot_time = pygame.time.get_ticks()
 
+    def animate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.animation_speed * 1000:  # Converte segundos para ms
+            self.last_update = now
+            self.current_sprite = (self.current_sprite + 1) % len(self.sprites)  # Alterna entre 0 e 1
+            self.image = self.sprites[self.current_sprite]
+
 class Enemy(BaseEnemy):
     def __init__(self, x, y, speed):
-        super().__init__(x, y, speed, enemy_img)
+        super().__init__(x, y, speed)
+        self.sprites = [  # Lista de sprites para animação
+           load_image("enemy.png", (50, 50)),
+           load_image("enemy2.png", (50, 50))
+        ]
+        self.image = self.sprites[self.current_sprite]
+        self.rect = self.image.get_rect(center=(x, y))
 
 '''
 class AgileEnemy(BaseEnemy):
@@ -147,7 +177,13 @@ class AgileEnemy(BaseEnemy):
 
 class AgileEnemy(BaseEnemy):
     def __init__(self, x, y, speed):
-        super().__init__(x, y, speed, agile_enemy_img)  # Corrigir a chamada do super para incluir a imagem
+        super().__init__(x, y, speed)  # Corrigir a chamada do super para incluir a imagem
+        self.sprites = [  # Lista de sprites para animação
+           load_image("agile_enemy.png", (50, 50)),
+           load_image("agile_enemy2.png", (50, 50))
+        ]
+        self.image = self.sprites[self.current_sprite]
+        self.rect = self.image.get_rect(center=(x, y))
 
     def move(self, bullets=None):
         self.rect.y += 2  # Movimentação vertical do inimigo
@@ -171,9 +207,15 @@ class AgileEnemy(BaseEnemy):
         screen.blit(agile_enemy_img, self.rect)
 
 
-class Enemy2(BaseEnemy):
+class SpiralEnemy(BaseEnemy):
     def __init__(self, x, y, speed):
-        super().__init__(x, y, speed, enemy2_img)
+        super().__init__(x, y, speed)
+        self.sprites = [  # Lista de sprites para animação
+           load_image("spiral_enemy.png", (50, 50)),
+           load_image("spiral_enemy2.png", (50, 50))
+        ]
+        self.image = self.sprites[self.current_sprite]
+        self.rect = self.image.get_rect(center=(x, y))
         self.angle = 0
         self.radius = 60
         self.center_x = x
@@ -190,7 +232,13 @@ class TeleportEnemy(BaseEnemy):
     def __init__(self):
         x = random.randint(0, constants.WIDTH - teleport_enemy_img.get_width())
         y = random.randint(0, constants.HEIGHT // 2)
-        super().__init__(x, y, constants.INITIAL_ENEMY_SPEED , teleport_enemy_img)
+        super().__init__(x, y, constants.INITIAL_ENEMY_SPEED)
+        self.sprites = [  # Lista de sprites para animação
+           load_image("teleport/t13.png", (50, 50)),
+           load_image("teleport/t14.png", (50, 50)),
+        ]
+        self.image = self.sprites[self.current_sprite]
+        self.rect = self.image.get_rect(center=(x, y))
         self.last_teleport_time = pygame.time.get_ticks()
         self.animation_state = "appearing"
         self.animation_frame = 0
@@ -231,9 +279,20 @@ class TeleportEnemy(BaseEnemy):
         self.alpha = min(255, (self.animation_frame / len(teleport_animation)) * 255)
 
     def draw(self, screen):
-        image = teleport_animation[min(self.animation_frame, len(teleport_animation) - 1)].copy()
-        image.set_alpha(self.alpha)
-        screen.blit(image, self.rect)
+        self.image = teleport_animation[min(self.animation_frame, len(teleport_animation) - 1)].copy()
+        self.image.set_alpha(self.alpha)
+        screen.blit(self.image, self.rect)
+
+    def animate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.animation_speed * 1000:  # Converte segundos para ms
+            self.last_update = now
+            self.current_sprite = (self.current_sprite + 1) % len(self.sprites)  # Alterna entre 0 e 1
+            if self.animation_state in ("appearing", "disappearing"):
+                self.image = teleport_animation[min(self.animation_frame, len(teleport_animation) - 1)].copy()
+                self.image.set_alpha(self.alpha)
+            else:
+                self.image = self.sprites[self.current_sprite]
 
     def move(self):
         self.y += self.speed

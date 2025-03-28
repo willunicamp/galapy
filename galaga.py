@@ -2,7 +2,7 @@ import pygame
 import random
 import math
 import os
-from objects import Player, Enemy, Enemy2, Bullet, Bomb, AgileEnemy, TeleportEnemy
+from objects import Player, Enemy, SpiralEnemy, Bullet, Bomb, AgileEnemy, TeleportEnemy
 from utils import load_image
 import constants
 
@@ -37,8 +37,8 @@ def spawn_enemy():
     global enemy_speed, current_wave
     total_population = sum(enemy_population.values())
     choice = random.choices(
-        population=["Enemy", "Enemy2", "AgileEnemy","TeleportEnemy"],
-        weights=[enemy_population["Enemy"], enemy_population["Enemy2"],
+        population=["Enemy", "SpiralEnemy", "AgileEnemy","TeleportEnemy"],
+        weights=[enemy_population["Enemy"], enemy_population["SpiralEnemy"],
                  enemy_population["AgileEnemy"],enemy_population["TeleportEnemy"]],
         k=1
     )[0]
@@ -46,8 +46,8 @@ def spawn_enemy():
     y = random.randint(-200, -50)
     if choice == "Enemy":
         enemies.append(Enemy(x, y, enemy_speed))
-    elif choice == "Enemy2":
-        enemies.append(Enemy2(x, y, enemy_speed))
+    elif choice == "SpiralEnemy":
+        enemies.append(SpiralEnemy(x, y, enemy_speed))
     elif choice == "TeleportEnemy":
         enemies.append(TeleportEnemy())
     else:
@@ -74,7 +74,7 @@ def spawn_enemy():
     if r < 0.6:
         enemies.append(Enemy(x, y, enemy_speed))
     elif r < 0.9:
-        enemies.append(Enemy2(x, y, enemy_speed))
+        enemies.append(SpiralEnemy(x, y, enemy_speed))
     else:
         enemies.append(AgileEnemy(x, y, enemy_speed))
     if score_hits >= current_wave * 5:
@@ -85,7 +85,7 @@ def spawn_enemy():
 def reset_game():
     global player, enemies, bullets, enemy_bullets, bombs, last_shot_time, score_hits, score_misses, enemy_speed, running, last_spawn_time, current_wave, enemy_population
 
-    player = Player()
+    player = Player(constants.WIDTH // 2, constants.HEIGHT - 30)
     enemy_speed = constants.INITIAL_ENEMY_SPEED
     enemies = []
     bullets = []
@@ -97,7 +97,7 @@ def reset_game():
     score_misses = 0
     current_wave = 1
     running = True
-    enemy_population = {"Enemy": 5, "Enemy2": 3, "AgileEnemy": 2,"TeleportEnemy": 3}  # Inicia população
+    enemy_population = {"Enemy": 5, "SpiralEnemy": 3, "AgileEnemy": 2,"TeleportEnemy": 3}  # Inicia população
 
     # Cria inimigos iniciais
     for _ in range(constants.MIN_ENEMIES):
@@ -186,7 +186,8 @@ def main():
 
             if isinstance(enemy, TeleportEnemy):
                 enemy.update()
-            enemy.draw(screen)
+            enemy.animate()
+            screen.blit(enemy.image, enemy.rect)  # Desenha o sprite atual
             enemy.shoot(enemy_bullets)
 
             if enemy.rect.colliderect(player.rect):
@@ -231,6 +232,8 @@ def main():
                     return
 
         # Desenha HUD
+        player.animate()  # Animação do jogador
+        screen.blit(player.image, player.rect)  # Desenha o sprite atual
         player.draw(screen, font)
 
         # Painel de informações
